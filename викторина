@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовая викторина</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            text-align: center;
+            padding: 30px;
+            background: #3498db;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .container:hover { transform: translateY(-5px); }
+        .question, .result { display: none; }
+        .active { display: block; }
+        h1 {
+            color: #1a5276;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2980b9;
+            font-size: 1.8em;
+            margin: 20px 0;
+        }
+        p {
+            line-height: 1.9;
+            text-align: left;
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+        button {
+            padding: 15px 30px;
+            margin: 20px;
+            cursor: pointer;
+            background: linear-gradient(45deg, #3498db, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            animation: pulse 2s infinite;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        .option {
+            display: block;
+            margin: 15px auto;
+            padding: 15px;
+            background: rgba(240, 249, 255, 0.9);
+            cursor: pointer;
+            border-radius: 10px;
+            max-width: 800px;
+            text-align: left;
+            transition: background 1.5s ease-in-out;
+            color: #000;
+            font-weight: 600;
+            border: 2px solid #000;
+            position: relative;
+            z-index: 1;
+        }
+        .option:hover { background: #d6eaf8; }
+        .option.correct {
+            background: #28a745;
+            animation: fadeGreen 1.5s ease-in-out;
+        }
+        .option.incorrect {
+            background: #dc3545;
+            animation: fadeRed 1.5s ease-in-out;
+        }
+        @keyframes fadeGreen {
+            0% { background: rgba(240, 249, 255, 0.9); }
+            100% { background: #28a745; }
+        }
+        @keyframes fadeRed {
+            0% { background: rgba(240, 249, 255, 0.9); }
+            100% { background: #dc3545; }
+        }
+        .disabled { pointer-events: none; opacity: 0.7; }
+        .author {
+            font-size: 1em;
+            color: #555;
+            margin-top: 20px;
+        }
+        #qNum {
+            margin-right: 10px;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 2em; }
+            h2 { font-size: 1.5em; }
+            p { font-size: 1em; }
+            button { padding: 10px 20px; font-size: 1em; }
+            .option { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="start" class="active">
+            <h1>Финансовая викторина</h1>
+            <p>Проверь свои знания в области финансовой грамотности! Ответь на 25 вопросов и узнай, насколько ты готов управлять своими деньгами.</p>
+            <button onclick="startQuiz()">Начать викторину</button>
+        </div>
+        <div id="quiz" class="question">
+            <h2>Вопрос <span id="qNum"></span> из 25</h2>
+            <p id="qText"></p>
+            <div id="options"></div>
+            <button id="nextBtn" onclick="nextQuestion()" disabled>Следующий</button>
+        </div>
+        <div id="result" class="result">
+            <h2>Твой результат</h2>
+            <p id="score"></p>
+            <p id="advice"></p>
+            <p class="author">Автор: Камкин Тимур, ученик 10 класса</p>
+            <button onclick="restart()">Попробовать снова</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedQuestions = [];
+        let answered = false;
+
+        const allQuestions = [
+            { text: "Что такое финансовая грамотность?", options: ["Умение управлять деньгами", "Трата всего на развлечения", "Заработок без учета", "Покупка ненужного"], correct: "Умение управлять деньгами" },
+            { text: "Как начать вести учет трат?", options: ["Записывать все покупки", "Тратить без плана", "Попросить друга считать", "Не думать о деньгах"], correct: "Записывать все покупки" },
+            { text: "Зачем нужен бюджет?", options: ["Контролировать траты", "Увеличить долги", "Тратить больше", "Покупать импульсивно"], correct: "Контролировать траты" },
+            { text: "Как правильно делить доходы в бюджете?", options: ["50% нужды, 30% желания, 20% сбережения", "Все на желания", "Все на долги", "Никак не делить"], correct: "50% нужды, 30% желания, 20% сбережения" },
+            { text: "Что такое сбережения?", options: ["Деньги на будущее", "Траты на мелочи", "Долги друзьям", "Покупки без цели"], correct: "Деньги на будущее" },
+            { text: "Где лучше хранить сбережения?", options: ["В банке с процентами", "Дома в коробке", "У друга", "В магазине"], correct: "В банке с процентами" },
+            { text: "Что такое долг?", options: ["Деньги, которые нужно вернуть", "Сбережения", "Подарок", "Доход"], correct: "Деньги, которые нужно вернуть" },
+            { text: "Почему микрозаймы опасны?", options: ["Огромные проценты", "Легко взять", "Дают бонусы", "Не нужно возвращать"], correct: "Огромные проценты" },
+            { text: "Как избежать импульсивных трат?", options: ["Ждать пару дней перед покупкой", "Покупать сразу", "Брать кредит", "Тратить все"], correct: "Ждать пару дней перед покупкой" },
+            { text: "Что спросить себя перед покупкой?", options: ["Нужна ли мне эта вещь?", "Сколько стоит доставка?", "Какой цвет лучше?", "Кто еще купил?"], correct: "Нужна ли мне эта вещь?" },
+            { text: "Какие бывают финансовые цели?", options: ["Краткосрочные, среднесрочные, долгосрочные", "Только на день", "Только на год", "Без сроков"], correct: "Краткосрочные, среднесрочные, долгосрочные" },
+            { text: "Как разбить финансовую цель на шаги?", options: ["Откладывать фиксированную сумму", "Тратить больше", "Ждать удачи", "Ничего не делать"], correct: "Откладывать фиксированную сумму" },
+            { text: "Что безопасно для инвестиций подросткам?", options: ["Банковский вклад", "Криптовалюта", "Пирамиды", "Акции без знаний"], correct: "Банковский вклад" },
+            { text: "Почему надо избегать 'быстрого заработка'?", options: ["Обычно это обман", "Всегда прибыльно", "Легко начать", "Не требует усилий"], correct: "Обычно это обман" },
+            { text: "Что такое налоги?", options: ["Платеж государству", "Личные сбережения", "Долг банку", "Доход"], correct: "Платеж государству" },
+            { text: "Как плани
